@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Espaço Progredir - Gestão</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+  <!-- Header -->
+  <header class="bg-blue-700 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/20 p-2 rounded-lg">
+          <i data-lucide="heart-handshake" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold leading-tight">Espaço Progredir</h1>
+          <p class="text-xs text-blue-100">Gestão de Beneficiários</p>
+        </div>
+      </div>
+      <div class="text-sm hidden sm:block" id="dataHoje"></div>
+    </div>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="bg-white border-b sticky top-[60px] z-40">
+    <div class="max-w-6xl mx-auto px-2 flex overflow-x-auto gap-1">
+      <button onclick="showTab('dashboard')" class="tab-btn tab-active px-4 py-3 text-sm whitespace-nowrap" data-tab="dashboard">Dashboard</button>
+      <button onclick="showTab('beneficiarios')" class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="beneficiarios">Beneficiários</button>
+      <button onclick="showTab('atividades')" class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="atividades">Atividades</button>
+      <button onclick="showTab('chamada')" class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="chamada">Chamada</button>
+      <button onclick="showTab('lanche')" class="tab-btn px-4 py-3 text-sm whitespace-nowrap" data-tab="lanche">Lanche</button>
+    </div>
+  </nav>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-4 border-l-4 border-blue-500">
+          <p class="text-xs text-gray-500 uppercase">Beneficiários Ativos</p>
+          <p class="text-3xl font-bold text-blue-700" id="stat-ativos">0</p>
+        </div>
+        <div class="bg-white rounded-xl shadow p-4 border-l-4 border-green-500">
+          <p class="text-xs text-gray-500 uppercase">Presentes Hoje</p>
+          <p class="text-3xl font-bold text-green-700" id="stat-presentes">0</p>
+        </div>
+        <div class="bg-white rounded-xl shadow p-4 border-l-4 border-orange-500">
+          <p class="text-xs text-gray-500 uppercase">Lanches Hoje</p>
+          <p class="text-3xl font-bold text-orange-700" id="stat-lanches">0</p>
+        </div>
+        <div class="bg-white rounded-xl shadow p-4 border-l-4 border-purple-500">
+          <p class="text-xs text-gray-500 uppercase">Atividades Ativas</p>
+          <p class="text-3xl font-bold text-purple-700" id="stat-atividades">0</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-5">
+        <h2 class="font-semibold mb-3 flex items-center gap-2"><i data-lucide="calendar" class="w-5 h-5"></i> Atividades de Hoje</h2>
+        <div id="atividades-hoje" class="space-y-2 text-sm text-gray-600">Nenhuma atividade cadastrada para hoje.</div>
+      </div>
+    </section>
+
+    <!-- BENEFICIÁRIOS -->
+    <section id="tab-beneficiarios" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <h2 class="text-xl font-bold">Beneficiários</h2>
+        <button onclick="openModalBeneficiario()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Novo Beneficiário
+        </button>
+      </div>
+      <div class="mb-4">
+        <input type="text" id="buscaBeneficiario" oninput="renderBeneficiarios()" placeholder="Buscar por nome..." class="w-full border rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div id="lista-beneficiarios" class="space-y-2"></div>
+    </section>
+
+    <!-- ATIVIDADES -->
+    <section id="tab-atividades" class="tab-content hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+        <h2 class="text-xl font-bold">Atividades</h2>
+        <button onclick="openModalAtividade()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Nova Atividade
+        </button>
+      </div>
+      <div id="lista-atividades" class="space-y-3"></div>
+    </section>
+
+    <!-- CHAMADA -->
+    <section id="tab-chamada" class="tab-content hidden">
+      <h2 class="text-xl font-bold mb-4">Lista de Chamada</h2>
+      <div class="bg-white rounded-xl shadow p-4 mb-4 grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-500">Data</label>
+          <input type="date" id="chamada-data" class="w-full border rounded-lg px-3 py-2 text-sm" onchange="carregarChamada()">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Atividade</label>
+          <select id="chamada-atividade" class="w-full border rounded-lg px-3 py-2 text-sm" onchange="carregarChamada()">
+            <option value="">Todas / Geral do dia</option>
+          </select>
+        </div>
+      </div>
+      <div id="lista-chamada" class="space-y-2"></div>
+      <button onclick="salvarChamada()" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium">Salvar Chamada</button>
+    </section>
+
+    <!-- LANCHE -->
+    <section id="tab-lanche" class="tab-content hidden">
+      <h2 class="text-xl font-bold mb-4">Controle de Lanche</h2>
+      <div class="bg-white rounded-xl shadow p-4 mb-4">
+        <label class="text-xs text-gray-500">Data</label>
+        <input type="date" id="lanche-data" class="w-full border rounded-lg px-3 py-2 text-sm mb-3" onchange="carregarLanche()">
+        <div class="grid grid-cols-2 gap-4 text-center">
+          <div class="bg-orange-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500">Previstos</p>
+            <p class="text-2xl font-bold text-orange-600" id="lanche-previstos">0</p>
+          </div>
+          <div class="bg-green-50 rounded-lg p-3">
+            <p class="text-xs text-gray-500">Consumidos</p>
+            <p class="text-2xl font-bold text-green-600" id="lanche-consumidos">0</p>
+          </div>
+        </div>
+      </div>
+      <div id="lista-lanche" class="space-y-2"></div>
+      <button onclick="salvarLanche()" class="mt-4 w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium">Salvar Controle de Lanche</button>
+    </section>
+  </main>
+
+  <!-- MODAL BENEFICIÁRIO -->
+  <div id="modal-beneficiario" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-6">
+      <h3 class="text-lg font-bold mb-4" id="modal-beneficiario-titulo">Novo Beneficiário</h3>
+      <input type="hidden" id="beneficiario-id">
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-gray-500">Nome completo *</label>
+          <input id="b-nome" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Nome da criança/adolescente">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-500">Data de nascimento</label>
+            <input type="date" id="b-nascimento" class="w-full border rounded-lg px-3 py-2 text-sm">
+          </div>
+          <div>
+            <label class="text-xs text-gray-500">Sexo</label>
+            <select id="b-sexo" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <option value="M">Masculino</option>
+              <option value="F">Feminino</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Responsável</label>
+          <input id="b-responsavel" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Nome do responsável">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Telefone do responsável</label>
+          <input id="b-telefone" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="(21) 99999-9999">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Bairro</label>
+          <input id="b-bairro" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Observações / Restrições</label>
+          <textarea id="b-obs" rows="2" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="fecharModalBeneficiario()" class="flex-1 border py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="salvarBeneficiario()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ATIVIDADE -->
+  <div id="modal-atividade" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6">
+      <h3 class="text-lg font-bold mb-4">Nova Atividade</h3>
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-gray-500">Nome da atividade *</label>
+          <input id="a-nome" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Ex: Reforço Escolar">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-gray-500">Dia da semana</label>
+            <select id="a-dia" class="w-full border rounded-lg px-3 py-2 text-sm">
+              <option>Segunda</option>
+              <option>Terça</option>
+              <option>Quarta</option>
+              <option>Quinta</option>
+              <option>Sexta</option>
+              <option>Sábado</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500">Horário</label>
+            <input id="a-horario" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="14:00 - 16:00">
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Monitor / Responsável</label>
+          <input id="a-monitor" class="w-full border rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500">Local</label>
+          <input id="a-local" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Sala 1, Quadra...">
+        </div>
+      </div>
+      <div class="flex gap-2 mt-5">
+        <button onclick="fecharModalAtividade()" class="flex-1 border py-2 rounded-lg text-sm">Cancelar</button>
+        <button onclick="salvarAtividade()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========== DATA ==========
+    let db = {
+      beneficiarios: [],
+      atividades: [],
+      frequencias: {},
+      lanches: {}
+    };
+
+    function loadDB() {
+      const saved = localStorage.getItem('espacoProgredirDB');
+      if (saved) db = JSON.parse(saved);
+    }
+    function saveDB() {
+      localStorage.setItem('espacoProgredirDB', JSON.stringify(db));
+      updateStats();
+    }
+
+    // ========== TABS ==========
+    function showTab(tab) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + tab).classList.remove('hidden');
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('tab-active');
+      if (tab === 'beneficiarios') renderBeneficiarios();
+      if (tab === 'atividades') renderAtividades();
+      if (tab === 'chamada') { preencherSelectAtividades(); carregarChamada(); }
+      if (tab === 'lanche') carregarLanche();
+      if (tab === 'dashboard') updateStats();
+    }
+
+    // ========== BENEFICIÁRIOS ==========
+    function openModalBeneficiario(id = null) {
+      document.getElementById('modal-beneficiario').classList.remove('hidden');
+      document.getElementById('beneficiario-id').value = id || '';
+      document.getElementById('modal-beneficiario-titulo').textContent = id ? 'Editar Beneficiário' : 'Novo Beneficiário';
+      if (id) {
+        const b = db.beneficiarios.find(x => x.id === id);
+        document.getElementById('b-nome').value = b.nome || '';
+        document.getElementById('b-nascimento').value = b.nascimento || '';
+        document.getElementById('b-sexo').value = b.sexo || 'M';
+        document.getElementById('b-responsavel').value = b.responsavel || '';
+        document.getElementById('b-telefone').value = b.telefone || '';
+        document.getElementById('b-bairro').value = b.bairro || '';
+        document.getElementById('b-obs').value = b.obs || '';
+      } else {
+        ['b-nome','b-nascimento','b-responsavel','b-telefone','b-bairro','b-obs'].forEach(id => document.getElementById(id).value = '');
+      }
+    }
+    function fecharModalBeneficiario() {
+      document.getElementById('modal-beneficiario').classList.add('hidden');
+    }
+    function salvarBeneficiario() {
+      const nome = document.getElementById('b-nome').value.trim();
+      if (!nome) return alert('Nome é obrigatório');
+      const id = document.getElementById('beneficiario-id').value;
+      const data = {
+        id: id || Date.now().toString(),
+        nome,
+        nascimento: document.getElementById('b-nascimento').value,
+        sexo: document.getElementById('b-sexo').value,
+        responsavel: document.getElementById('b-responsavel').value,
+        telefone: document.getElementById('b-telefone').value,
+        bairro: document.getElementById('b-bairro').value,
+        obs: document.getElementById('b-obs').value,
+        ativo: true
+      };
+      if (id) {
+        const idx = db.beneficiarios.findIndex(x => x.id === id);
+        db.beneficiarios[idx] = data;
+      } else {
+        db.beneficiarios.push(data);
+      }
+      saveDB();
+      fecharModalBeneficiario();
+      renderBeneficiarios();
+    }
+    function renderBeneficiarios() {
+      const busca = (document.getElementById('buscaBeneficiario')?.value || '').toLowerCase();
+      const lista = db.beneficiarios
+        .filter(b => b.ativo && b.nome.toLowerCase().includes(busca))
+        .sort((a,b) => a.nome.localeCompare(b.nome));
+      const el = document.getElementById('lista-beneficiarios');
+      if (lista.length === 0) {
+        el.innerHTML = '<p class="text-gray-500 text-sm py-8 text-center">Nenhum beneficiário cadastrado.</p>';
+        return;
+      }
+      el.innerHTML = lista.map(b => `
+        <div class="bg-white rounded-xl shadow p-4 flex justify-between items-center">
+          <div>
+            <p class="font-medium">${b.nome}</p>
+            <p class="text-xs text-gray-500">${b.bairro || ''} ${b.responsavel ? '• ' + b.responsavel : ''}</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="openModalBeneficiario('${b.id}')" class="text-blue-600 text-sm">Editar</button>
+            <button onclick="desativarBeneficiario('${b.id}')" class="text-red-500 text-sm">Remover</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function desativarBeneficiario(id) {
+      if (!confirm('Remover este beneficiário?')) return;
+      const b = db.beneficiarios.find(x => x.id === id);
+      if (b) b.ativo = false;
+      saveDB();
+      renderBeneficiarios();
+    }
+
+    // ========== ATIVIDADES ==========
+    function openModalAtividade() {
+      document.getElementById('modal-atividade').classList.remove('hidden');
+      ['a-nome','a-horario','a-monitor','a-local'].forEach(id => document.getElementById(id).value = '');
+    }
+    function fecharModalAtividade() {
+      document.getElementById('modal-atividade').classList.add('hidden');
+    }
+    function salvarAtividade() {
+      const nome = document.getElementById('a-nome').value.trim();
+      if (!nome) return alert('Nome é obrigatório');
+      db.atividades.push({
+        id: Date.now().toString(),
+        nome,
+        dia: document.getElementById('a-dia').value,
+        horario: document.getElementById('a-horario').value,
+        monitor: document.getElementById('a-monitor').value,
+        local: document.getElementById('a-local').value,
+        ativa: true
+      });
+      saveDB();
+      fecharModalAtividade();
+      renderAtividades();
+    }
+    function renderAtividades() {
+      const el = document.getElementById('lista-atividades');
+      const lista = db.atividades.filter(a => a.ativa);
+      if (lista.length === 0) {
+        el.innerHTML = '<p class="text-gray-500 text-sm py-8 text-center">Nenhuma atividade cadastrada.</p>';
+        return;
+      }
+      el.innerHTML = lista.map(a => `
+        <div class="bg-white rounded-xl shadow p-4">
+          <div class="flex justify-between">
+            <div>
+              <p class="font-medium">${a.nome}</p>
+              <p class="text-xs text-gray-500">${a.dia} • ${a.horario || 'Horário não definido'} ${a.local ? '• ' + a.local : ''}</p>
+              ${a.monitor ? `<p class="text-xs text-gray-400">Monitor: ${a.monitor}</p>` : ''}
+            </div>
+            <button onclick="removerAtividade('${a.id}')" class="text-red-500 text-sm">Remover</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    function removerAtividade(id) {
+      if (!confirm('Remover esta atividade?')) return;
+      const a = db.atividades.find(x => x.id === id);
+      if (a) a.ativa = false;
+      saveDB();
+      renderAtividades();
+    }
+
+    // ========== CHAMADA ==========
+    function preencherSelectAtividades() {
+      const select = document.getElementById('chamada-atividade');
+      select.innerHTML = '<option value="">Todas / Geral do dia</option>';
+      db.atividades.filter(a => a.ativa).forEach(a => {
+        select.innerHTML += `<option value="${a.id}">${a.nome} (${a.dia})</option>`;
+      });
+    }
+    function carregarChamada() {
+      const data = document.getElementById('chamada-data').value || new Date().toISOString().slice(0,10);
+      document.getElementById('chamada-data').value = data;
+      const atividadeId = document.getElementById('chamada-atividade').value;
+      const key = data + '_' + (atividadeId || 'geral');
+      const salvos = db.frequencias[key] || {};
+      const lista = db.beneficiarios.filter(b => b.ativo).sort((a,b) => a.nome.localeCompare(b.nome));
+      const el = document.getElementById('lista-chamada');
+      if (lista.length === 0) {
+        el.innerHTML = '<p class="text-gray-500 text-sm text-center py-6">Cadastre beneficiários primeiro.</p>';
+        return;
+      }
+      el.innerHTML = lista.map(b => {
+        const status = salvos[b.id] || '';
+        return `
+          <div class="bg-white rounded-xl shadow p-3 flex items-center justify-between gap-2">
+            <span class="text-sm font-medium flex-1">${b.nome}</span>
+            <div class="flex gap-1">
+              <button onclick="setStatus('${b.id}','P')" class="px-3 py-1 rounded text-xs ${status==='P' ? 'bg-green-600 text-white' : 'bg-gray-100'}">P</button>
+              <button onclick="setStatus('${b.id}','F')" class="px-3 py-1 rounded text-xs ${status==='F' ? 'bg-red-600 text-white' : 'bg-gray-100'}">F</button>
+              <button onclick="setStatus('${b.id}','J')" class="px-3 py-1 rounded text-xs ${status==='J' ? 'bg-yellow-500 text-white' : 'bg-gray-100'}">J</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      window._chamadaTemp = { ...salvos };
+    }
+    function setStatus(id, status) {
+      window._chamadaTemp = window._chamadaTemp || {};
+      window._chamadaTemp[id] = status;
+      const data = document.getElementById('chamada-data').value;
+      const atividadeId = document.getElementById('chamada-atividade').value;
+      const key = data + '_' + (atividadeId || 'geral');
+      db.frequencias[key] = { ...window._chamadaTemp };
+      carregarChamada();
+    }
+    function salvarChamada() {
+      const data = document.getElementById('chamada-data').value;
+      const atividadeId = document.getElementById('chamada-atividade').value;
+      const key = data + '_' + (atividadeId || 'geral');
+      db.frequencias[key] = { ...(window._chamadaTemp || {}) };
+      saveDB();
+      alert('Chamada salva com sucesso!');
+      updateStats();
+    }
+
+    // ========== LANCHE ==========
+    function carregarLanche() {
+      const data = document.getElementById('lanche-data').value || new Date().toISOString().slice(0,10);
+      document.getElementById('lanche-data').value = data;
+      const registro = db.lanches[data] || { lista: {} };
+      const keyGeral = data + '_geral';
+      const presentesIds = Object.entries(db.frequencias[keyGeral] || {}).filter(([_,s]) => s === 'P').map(([id]) => id);
+      const lista = db.beneficiarios.filter(b => b.ativo && (presentesIds.length === 0 || presentesIds.includes(b.id)));
+      document.getElementById('lanche-previstos').textContent = lista.length;
+      const consumidos = Object.values(registro.lista || {}).filter(v => v).length;
+      document.getElementById('lanche-consumidos').textContent = consumidos;
+      const el = document.getElementById('lista-lanche');
+      if (lista.length === 0) {
+        el.innerHTML = '<p class="text-gray-500 text-sm text-center py-6">Faça a chamada do dia primeiro ou cadastre beneficiários.</p>';
+        return;
+      }
+      el.innerHTML = lista.map(b => {
+        const marcou = registro.lista?.[b.id] || false;
+        return `
+          <div class="bg-white rounded-xl shadow p-3 flex items-center justify-between">
+            <span class="text-sm font-medium">${b.nome}</span>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" ${marcou ? 'checked' : ''} onchange="toggleLanche('${b.id}', this.checked)" class="w-5 h-5">
+              <span class="text-xs">Lanchou</span>
+            </label>
+          </div>
+        `;
+      }).join('');
+      window._lancheTemp = { ...(registro.lista || {}) };
+    }
+    function toggleLanche(id, checked) {
+      window._lancheTemp = window._lancheTemp || {};
+      window._lancheTemp[id] = checked;
+      const consumidos = Object.values(window._lancheTemp).filter(v => v).length;
+      document.getElementById('lanche-consumidos').textContent = consumidos;
+    }
+    function salvarLanche() {
+      const data = document.getElementById('lanche-data').value;
+      db.lanches[data] = {
+        lista: { ...(window._lancheTemp || {}) },
+        consumidos: Object.values(window._lancheTemp || {}).filter(v => v).length
+      };
+      saveDB();
+      alert('Controle de lanche salvo!');
+      updateStats();
+    }
+
+    // ========== STATS ==========
+    function updateStats() {
+      const ativos = db.beneficiarios.filter(b => b.ativo).length;
+      document.getElementById('stat-ativos').textContent = ativos;
+      document.getElementById('stat-atividades').textContent = db.atividades.filter(a => a.ativa).length;
+      const hoje = new Date().toISOString().slice(0,10);
+      const key = hoje + '_geral';
+      const presentes = Object.values(db.frequencias[key] || {}).filter(s => s === 'P').length;
+      document.getElementById('stat-presentes').textContent = presentes;
+      const lanches = db.lanches[hoje]?.consumidos || 0;
+      document.getElementById('stat-lanches').textContent = lanches;
+
+      const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      const diaHoje = dias[new Date().getDay()];
+      const atvs = db.atividades.filter(a => a.ativa && a.dia === diaHoje);
+      const el = document.getElementById('atividades-hoje');
+      if (atvs.length === 0) {
+        el.innerHTML = '<p class="text-gray-500">Nenhuma atividade para hoje.</p>';
+      } else {
+        el.innerHTML = atvs.map(a => `<div class="flex justify-between border-b py-2"><span>${a.nome}</span><span class="text-gray-500">${a.horario || ''}</span></div>`).join('');
+      }
+    }
+
+    // ========== INIT ==========
+    loadDB();
+    document.getElementById('dataHoje').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.getElementById('chamada-data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('lanche-data').value = new Date().toISOString().slice(0,10);
+    updateStats();
+    lucide.createIcons();
+  </script>
+</body>
+</html>
