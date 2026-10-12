@@ -1,0 +1,1 @@
+window.BENEFICIARIOS_INICIAIS = []
